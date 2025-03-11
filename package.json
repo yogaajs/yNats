@@ -21,7 +21,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "watch": "tsx watch src/index.ts",
-    "test": "tsx tests/index.ts",
+    "test": "tsx tests/client1.ts",
     "build": "pkgroll --minify --clean-dist",
     "build:test": "pkgroll --clean-dist"
   },
