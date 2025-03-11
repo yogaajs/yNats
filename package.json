@@ -45,24 +45,14 @@
     "dist"
   ],
   "exports": {
-    "./public": {
+    "./jetstream": {
       "require": {
-        "types": "./dist/clients/public/index.d.cts",
-        "default": "./dist/clients/public/index.cjs"
+        "types": "./dist/modules/jetstream/index.d.cts",
+        "default": "./dist/modules/jetstream/index.cjs"
       },
       "import": {
-        "types": "./dist/clients/public/index.d.mts",
-        "default": "./dist/clients/public/index.mjs"
-      }
-    },
-    "./public/actions": {
-      "require": {
-        "types": "./dist/clients/public/actions/types.d.cts",
-        "default": "./dist/clients/public/actions/index.cjs"
-      },
-      "import": {
-        "types": "./dist/clients/public/actions/types.d.mts",
-        "default": "./dist/clients/public/actions/index.mjs"
+        "types": "./dist/modules/jetstream/index.d.mts",
+        "default": "./dist/modules/jetstream/index.mjs"
       }
     }
   }

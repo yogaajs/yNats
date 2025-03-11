@@ -1,13 +1,13 @@
 import type { StreamConfig, PubAck } from "nats";
-import type { ProducerConstructor } from './types';
+import type { ProducerConstructor } from '../types';
 import { RetentionPolicy, StorageType, DiscardPolicy } from "nats";
 import { Client } from 'src/client/Client';
 import { Readiness } from 'src/classes/Readiness.class';
-import { sc } from './utils';
+import { sc } from '../utils';
 import { Logger } from '@/classes/Logger.class';
 
-import { getMessage } from './extensions/getMessage';
-import { getLastMessage } from './extensions/getLastMessage';
+import { getMessage } from '../extensions/getMessage';
+import { getLastMessage } from '../extensions/getLastMessage';
 
 
 // Class

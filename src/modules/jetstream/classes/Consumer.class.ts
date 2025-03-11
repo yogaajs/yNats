@@ -1,8 +1,8 @@
 import type { StreamConfig, PubAck, ConsumerMessages, ConsumerConfig, JsMsg, Consumer } from "nats";
-import type { ProducerConstructor, MessagePayload, ConsumerConstructor } from './types';
+import type { ProducerConstructor, MessagePayload, ConsumerConstructor } from '../types';
 import { Client } from 'src/client/Client';
 import { Readiness } from 'src/classes/Readiness.class';
-import { sc } from './utils';
+import { sc } from '../utils';
 import { Logger } from '@/classes/Logger.class';
 import { StaticShutdownManager } from '@/classes/Shutdown.class';
 import { AckPolicy, DeliverPolicy } from 'nats';

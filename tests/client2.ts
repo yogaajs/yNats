@@ -1,5 +1,5 @@
-import { StreamProducer } from '@/modules/jetstream/Producer.class';
-import { StreamConsumer } from '@/modules/jetstream/Consumer.class';
+import { StreamProducer } from '@/modules/jetstream/classes/Producer.class';
+import { StreamConsumer } from '@/modules/jetstream/classes/Consumer.class';
 import { RetentionPolicy, StorageType, JsMsg } from 'nats';
 
 //  TESTS

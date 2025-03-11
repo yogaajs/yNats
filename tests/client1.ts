@@ -1,4 +1,4 @@
-import { StreamProducer } from '../src/modules/jetstream/Producer.class';
+import { StreamProducer } from '../src/modules/jetstream/classes/Producer.class';
 
 //  TESTS
 // ===========================================================

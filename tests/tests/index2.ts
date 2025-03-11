@@ -1,4 +1,4 @@
-import { StreamProducer } from '@/modules/jetstream/Producer.class';
+import { StreamProducer } from '@/modules/jetstream/classes/Producer.class';
 import options from 'src/constants/instances';
 
 //  TEST
