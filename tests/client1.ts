@@ -1,31 +1,80 @@
-import { StreamProducer } from '../src/modules/jetstream/classes/Producer.class';
+import { StreamProducer, StreamConsumer } from '@/modules/jetstream';
+import { MessagePayload } from '@/modules/jetstream/types';
 
 //  TESTS
 // ===========================================================
 
-let counter = 1230;
+const blocks = [
+    {
+        block: 1230,
+        timestamp: Date.now(),
+    },
+    {
+        block: 1231,
+        timestamp: Date.now(),
+    },
+    {
+        block: 1232,
+        timestamp: Date.now(),
+    },
+    {
+        block: 1233,
+        timestamp: Date.now(),
+    },
+    {
+        block: 1234,
+        timestamp: Date.now(),
+    },
+    {
+        block: 1235,
+        timestamp: Date.now(),
+    },
+    {
+        block: 1236,
+        timestamp: Date.now(),
+    },
+    {
+        block: 1237,
+        timestamp: Date.now(),
+    },
+];
+
+const producer = new StreamProducer({
+    streamConfig: {
+        name: "EthereumBlocks",
+        subjects: ["EthereumBlocks.*"],
+    },
+});
+
+const consumer = new StreamConsumer({
+    streamName: "EthereumBlocks",
+    consumerName: "consumer-bot1",
+    consumerConfig: {},
+});
 
 (async () => {
-    const producer = new StreamProducer({
-        streamConfig: {
-            name: "EthereumBlocks",
-            subjects: ["EthereumBlocks.*"],
-        },
+    for (const block of blocks) {   
+        await producer.publish(block.block, { data: block });
+    }
+
+    consumer.subscribe(async (msg: MessagePayload) => {
+        const diff = Date.now() - msg.timestamp;
+        console.log("consumer1 message", diff);
+        await new Promise(resolve => setTimeout(resolve, 100));
     });
 
-    const lastMessage = await producer.getLastMessage();
-    console.log("lastMessage", lastMessage);
+    const interval = setInterval(async () => {
+        for (const block of blocks) {   
+            await producer.publish(block.block, { data: block });
+        }
+    }, 3_000);
 
-    setTimeout(async () => {
-        counter++;
-        await producer.publish(counter, {
-            block: counter,
-            transactions: [
-            {
-                hash: "0x1234567890",
-                timestamp: Date.now(),
-            }
-            ],
-        });
-    }, 10_000);
+    process.once("SIGINT", () => {
+        clearInterval(interval);
+        consumer.unsubscribe();
+    });
+    process.once("SIGTERM", () => {
+        clearInterval(interval);
+        consumer.unsubscribe();
+    });
 })();

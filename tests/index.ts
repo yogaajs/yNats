@@ -1,54 +1,56 @@
-import { PublicClientWss, PublicClientHttp } from '../src/clients/public';
-import type { RpcBlock } from 'viem';
-
-//  Class
+//  Global
 // ===========================================================
 
-const providers: any = {
-    sonic: {
-        http: "https://go.getblock.io/f503f2e842a54f3faad1c3e41cd4ca84",
-        wss: "wss://go.getblock.io/1d68b02f8c2f4e7d90e649022ac6d544",
-        type: 'debug',
-    },
-    avalanche: {
-        http: "https://go.getblock.io/9b3e52b28d374a4683b0e4215a9f1f4d/ext/bc/C/rpc",
-        wss: "wss://go.getblock.io/547438b0d74d4c1389351122ab8bd802/ext/bc/C/rpc",
-        type: 'debug',
-    }
-};
+const MAX_CALLS = 200;
+const MAX_CALLS_PER_FUNCTION = 0.25 * MAX_CALLS; // 25% max
 
-async function testClient(client: PublicClientWss | PublicClientHttp) {
-    try {
-        const blockNumber = await client.client.getBlockNumber();
-        console.log(blockNumber);
-    } catch (error) {
-        console.error(error);
+var CONCURRENT_CALLS = 0;
+
+//  Local
+// ===========================================================
+
+const CALLS_PER_REQUEST = 3;
+const MAX_CONCURRENT_REQUESTS = Math.floor(MAX_CALLS_PER_FUNCTION / CALLS_PER_REQUEST); // Max requests
+
+const runningRequests = new Set<Promise<any>>();
+
+
+//  Function
+// ===========================================================
+
+async function concurrent(runningRequests, request) {
+    var maxRequests = () => runningRequests.size + 1 > MAX_CONCURRENT_REQUESTS
+    var maxCalls = () => CONCURRENT_CALLS + request.count > MAX_CALLS
+
+    // Wait until there's capacity for both a new request and its "count"
+    if (runningRequests.size > 0) {
+        while (
+            maxRequests() ||    // Permet de limiter a 25% du max 
+            maxCalls()          // Permet d'éviter que plusieurs soit au max (25%) et que lui aussi y aille
+        ) {
+            // Wait until one of the running request promises settles
+            await Promise.race(runningRequests);
+        }
     }
 }
 
-(async function() {  
-    // Execute
+async function handler(request) {
+    // Wait until there's capacity for both a new request and its "count"
+    await concurrent(runningRequests, request);
 
-    const wss = new PublicClientWss({
-        chainId: 43114,
-        provider: providers.sonic,
-    });
+    // Start processing the request
+    const promise = request.handlers
+        .then((result) => {
+            request.resolve(result);
+        })
+        .catch((error) => {
+            request.reject(error);
+        })
+        .finally(() => {
+            runningRequests.delete(promise);
+            CONCURRENT_CALLS -= request.count;
+        });
 
-    const http = new PublicClientHttp({
-        chainId: 43114,
-        provider: providers.sonic,
-    });
-
-    // Fetch traces block
-    testClient(http);
-    testClient(wss);
-
-    wss.subscribe.newHeads.start({
-        onData: (block: RpcBlock) => {
-            console.log(block.number);
-        },
-        onError: (error: Error) => {
-            console.error(error);
-        }
-    });
-})()
+    runningRequests.add(promise);
+    CONCURRENT_CALLS += request.count;
+}

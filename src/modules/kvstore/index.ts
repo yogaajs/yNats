@@ -1,0 +1,1 @@
+export { KvStore } from './classes/Store.class';

@@ -1,2 +1,5 @@
-export { StreamProducer } from './modules/jetstream/classes/Producer.class';
-export { StreamConsumer } from './modules/jetstream/classes/Consumer.class';
+export * as KvStore from './modules/kvstore/index';
+export * as IKvStore from './modules/kvstore/types';
+
+export * as JetStream from './modules/jetstream/index';
+export * as IJetStream from './modules/jetstream/types';

@@ -20,6 +20,10 @@ export class StaticShutdownManager {
     // Private
 
     private static async shutdown(signal: string): Promise<void> {
+        if (this.status === "undefined") {
+            console.warn("[ShutdownManager] Not initialized.");
+            return;
+        }
         if (this.status === "shutdown") {
             console.warn("[ShutdownManager] Shutdown already in progress.");
             return;

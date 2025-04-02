@@ -13,20 +13,14 @@ export class Logger {
     // Public
 
     public info(...args: any[]): void {
-        this._log('info', ...args);
+        console.info(`${this._prefix}`, ...args);
     }
 
     public warn(...args: any[]): void {
-        this._log('warn', ...args);
+        console.warn(`${this._prefix}`, ...args);
     }
 
     public error(...args: any[]): void {
-        this._log('error', ...args);
-    }
-
-    // Private
-
-    private _log(level: 'info' | 'warn' | 'error', ...args: any[]): void {
-        console[level](`${this._prefix}`, ...args);
+        console.error(`${this._prefix}`, ...args);
     }
 }

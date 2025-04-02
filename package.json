@@ -39,7 +39,11 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "nats": "^2.29.2"
+    "@nats-io/jetstream": "^3.0.0",
+    "@nats-io/kv": "^3.0.0",
+    "@nats-io/nats-core": "^3.0.0",
+    "@nats-io/transport-node": "^3.0.0",
+    "nats": "^2.29.3"
   },
   "files": [
     "dist"
@@ -53,6 +57,16 @@
       "import": {
         "types": "./dist/modules/jetstream/index.d.mts",
         "default": "./dist/modules/jetstream/index.mjs"
+      }
+    },
+    "./kvstore": {
+      "require": {
+        "types": "./dist/modules/kvstore/index.d.cts",
+        "default": "./dist/modules/kvstore/index.cjs"
+      },
+      "import": {
+        "types": "./dist/modules/kvstore/index.d.mts",
+        "default": "./dist/modules/kvstore/index.mjs"
       }
     }
   }

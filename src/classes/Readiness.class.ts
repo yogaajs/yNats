@@ -3,8 +3,6 @@
 
 export class Readiness {
     private _isReady: boolean = false;
-    private _isShuttingDown: boolean = false;
-
     private _pendingPromise: Promise<void> | null = null;
     private _pendingResolve: (() => void) | null = null;
     private _pendingReject: ((reason?: any) => void) | null = null;
@@ -32,24 +30,7 @@ export class Readiness {
         }
     }
 
-    public setShuttingDown(): void {
-        if (this._isShuttingDown !== true) {
-            this._isShuttingDown = true;
-            if (this._pendingReject) {
-                this._pendingReject(
-                    'Client is shutting down, not accepting new operations!'
-                );
-            }
-            this._pendingPromise = null;
-            this._pendingResolve = null;
-            this._pendingReject = null;
-        }
-    }
-
     public isReady(): Promise<void> {
-        if (this._isShuttingDown) {
-            throw new Error('Client is shutting down, not accepting new operations!');
-        }
         if (this._isReady === true) {
             return Promise.resolve();       // Immediately resolve if "ready"
         }
