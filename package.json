@@ -1,6 +1,6 @@
 {
   "name": "@yogaajs/ynats",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "Personal encapsulation module for nats",
   "license": "UNLICENSED",
   "author": {
