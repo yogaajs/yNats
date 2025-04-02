@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/yogaajs/yNats/compare/v1.0.0...v1.0.1) (2025-04-02)
+
+
+### Bug Fixes
+
+* update version ([d9ba198](https://github.com/yogaajs/yNats/commit/d9ba198b8276e00313bf1952160fcb1ca9a1796b))
+
 # 1.0.0 (2025-04-02)
 
 
