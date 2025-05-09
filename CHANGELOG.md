@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/yogaajs/yNats/compare/v1.1.1...v1.1.2) (2025-05-09)
+
+
+### Bug Fixes
+
+* add debug mode ([f888d26](https://github.com/yogaajs/yNats/commit/f888d26b4d05d62ca29b2509d9efe81a788563c3))
+
 ## [1.1.1](https://github.com/yogaajs/yNats/compare/v1.1.0...v1.1.1) (2025-05-09)
 
 
