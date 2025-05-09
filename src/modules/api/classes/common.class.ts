@@ -22,7 +22,8 @@ export class Common<Type extends 'requester' | 'responder'> {
 
     constructor(
         client: Client, 
-        config: Type extends 'responder' ? StreamResponder.Config : StreamRequester.Config
+        config: Type extends 'responder' ? StreamResponder.Config : StreamRequester.Config,
+        debug: boolean = false,
     ) {
         if (!client) throw new Error('Client is required!');
         if (!config) throw new Error('Config is required!');
@@ -45,10 +46,10 @@ export class Common<Type extends 'requester' | 'responder'> {
                 consumerName: config.consumerName,
                 filterSubject: config.filterSubject,
             }) as any;
-            this.logger = new Logger(`[nats][responder][${this.streamConfig.name}]`);
+            this.logger = new Logger(`[nats][responder][${this.streamConfig.name}]`, debug);
         } else {
             this.consumerConfig = undefined as any;
-            this.logger = new Logger(`[nats][requester][${this.streamConfig.name}]`);
+            this.logger = new Logger(`[nats][requester][${this.streamConfig.name}]`, debug);
         }
     }
 

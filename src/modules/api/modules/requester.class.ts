@@ -40,7 +40,7 @@ export class StreamRequester extends Common<'requester'> {
         config: StreamRequester.Config,
         options?: Partial<StreamRequester.Options>
     ) {
-        super(client, config);
+        super(client, config, options?.debug ?? false);
 
         // Options
         this.options = {

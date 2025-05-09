@@ -44,7 +44,7 @@ export class StreamResponder extends Common<'responder'> {
         config: StreamResponder.Config,
         options?: Partial<StreamResponder.Options>
     ) {
-        super(client, config);
+        super(client, config, options?.debug ?? false);
 
         // Options
         this.options = {
@@ -158,7 +158,16 @@ export class StreamResponder extends Common<'responder'> {
 
                 // Consume messages (infinite loop)
                 for await (const msg of this.consumerMessages!) {
+                    // Lock the mutex
                     await this.mutex.lock();
+                    
+                    // Log
+                    this.logger.debug(
+                        `active: ${this.mutex.activeCount}`,
+                        `waiting: ${this.mutex.waitingCount}`,
+                    );
+
+                    // Process the message
                     this.consumeMessage(msg, _callback)
                         .finally(() => {
                             this.mutex.unlock();
