@@ -48,25 +48,29 @@
     "dist"
   ],
   "exports": {
-    "./jetstream": {
-      "require": {
-        "types": "./dist/modules/jetstream/index.d.cts",
-        "default": "./dist/modules/jetstream/index.cjs"
-      },
-      "import": {
-        "types": "./dist/modules/jetstream/index.d.mts",
-        "default": "./dist/modules/jetstream/index.mjs"
-      }
+    "./core": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.mjs"
     },
-    "./kvstore": {
-      "require": {
-        "types": "./dist/modules/kvstore/index.d.cts",
-        "default": "./dist/modules/kvstore/index.cjs"
-      },
-      "import": {
-        "types": "./dist/modules/kvstore/index.d.mts",
-        "default": "./dist/modules/kvstore/index.mjs"
-      }
+    "./stream": {
+      "require": "./dist/modules/stream/index.cjs",
+      "import": "./dist/modules/stream/index.mjs",
+      "types": "./dist/modules/stream/index.d.ts",
+      "default": "./dist/modules/stream/index.mjs"
+    },
+    "./store": {
+      "require": "./dist/modules/store/index.cjs",
+      "import": "./dist/modules/store/index.mjs",
+      "types": "./dist/modules/store/index.d.ts",
+      "default": "./dist/modules/store/index.mjs"
+    },
+    "./api": {
+      "require": "./dist/modules/api/index.cjs",
+      "import": "./dist/modules/api/index.mjs",
+      "types": "./dist/modules/api/index.d.ts",
+      "default": "./dist/modules/api/index.mjs"
     }
   }
 }
