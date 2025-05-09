@@ -1,8 +1,9 @@
-import type { JsMsg, ConsumerMessages, Consumer, ConsumerConfig } from '@nats-io/jetstream';
+import type { JsMsg, ConsumerMessages, Consumer } from '@nats-io/jetstream';
 import type { Client } from "src/core/client.class";
 import type { StreamRequester } from './requester.class';
 import { Common } from '../classes/common.class';
 import { getSubject, getHeader } from '../utils';
+import Mutex from '@/classes/mutex.class';
 
 // Types
 // ===========================================================
@@ -13,6 +14,7 @@ export namespace StreamResponder {
         filterSubject: string,
     };
     export type Options = {
+        maxConcurrent: number,
         debug: boolean;
     };
     export type Payload = {
@@ -26,11 +28,11 @@ export namespace StreamResponder {
 // ===========================================================
 
 export class StreamResponder extends Common<'responder'> {
+    private readonly mutex: Mutex;
     private readonly options: StreamResponder.Options;
 
     private consumer: Consumer | null = null;
     private consumerMessages: ConsumerMessages | null = null;
-    private messagesActive: number = 0;
 
     private subscribeActive: boolean = false;
     private unsubscribeActive: boolean = false;
@@ -46,8 +48,12 @@ export class StreamResponder extends Common<'responder'> {
 
         // Options
         this.options = {
+            maxConcurrent: options?.maxConcurrent ?? 1,
             debug: options?.debug ?? false,
         } satisfies StreamResponder.Options;
+
+        // Setup
+        this.mutex = new Mutex(this.options.maxConcurrent);
 
         // Setup
         this.setupStream()
@@ -110,8 +116,14 @@ export class StreamResponder extends Common<'responder'> {
             }
 
             // Wait for all messages to be processed
-            while (this.messagesActive > 0) {
-                this.logger.info(`waiting for ${this.messagesActive} messages to be processed...`);
+            while (this.mutex.waitingCount > 0) {
+                this.logger.info(`waiting for ${this.mutex.waitingCount} messages to be processed...`);
+                await new Promise(resolve => setTimeout(resolve, 2_000));
+            }
+
+            // Wait for all messages to finish
+            while (this.mutex.activeCount > 0) {
+                this.logger.info(`waiting for ${this.mutex.activeCount} messages to finish...`);
                 await new Promise(resolve => setTimeout(resolve, 2_000));
             }
 
@@ -146,12 +158,11 @@ export class StreamResponder extends Common<'responder'> {
 
                 // Consume messages (infinite loop)
                 for await (const msg of this.consumerMessages!) {
-                    this.messagesActive++;
-                    try {
-                        await this.consumeMessage(msg, _callback);
-                    } finally {
-                        this.messagesActive--;
-                    }
+                    await this.mutex.lock();
+                    this.consumeMessage(msg, _callback)
+                        .finally(() => {
+                            this.mutex.unlock();
+                        });
                 }
 
                 // Log the unsubscribe
@@ -186,11 +197,9 @@ export class StreamResponder extends Common<'responder'> {
 
         try {
             // Decode the message
+            const inbox = getHeader(msg.headers!);
             const subject = getSubject(streamConfig.name, msg.subject);
             const payload = msg.json() as StreamResponder.Payload;
-
-            // Decode the headers
-            const inbox = getHeader(msg.headers!);
 
             // Process the message
             const result = await callback(subject, payload);

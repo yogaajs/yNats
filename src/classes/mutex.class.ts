@@ -10,10 +10,7 @@ export default class Mutex {
     private currentLocks: number = 0;
     
     /** Queue of pending lock requests */
-    private waitingQueue: Array<{
-        resolve: () => void;
-        reject: (reason?: any) => void;
-    }> = [];
+    private waitingQueue: Array<{ resolve: () => void }> = [];
 
     /**
      * Creates a new mutex instance
@@ -27,10 +24,24 @@ export default class Mutex {
     }
 
     /**
+     * Returns the current number of active locks
+     */
+    public get activeCount(): number {
+        return this.currentLocks;
+    }
+
+    /**
+     * Returns the number of pending lock requests
+     */
+    public get waitingCount(): number {
+        return this.waitingQueue.length;
+    }
+
+    /**
      * Acquires a lock, waiting if necessary until one becomes available
      * @returns A promise that resolves when the lock is acquired
      */
-    public async lock(): Promise<void> {
+    public lock(): Promise<void> {
         // If we haven't reached the maximum concurrent operations, grant the lock immediately
         if (this.currentLocks < this.maxConcurrent) {
             this.currentLocks++;
@@ -39,7 +50,7 @@ export default class Mutex {
 
         // Otherwise, add to the waiting queue
         return new Promise<void>((resolve, reject) => {
-            this.waitingQueue.push({ resolve, reject });
+            this.waitingQueue.push({ resolve });
         });
     }
 
@@ -50,33 +61,19 @@ export default class Mutex {
     public unlock(): void {
         // Ensure we don't decrement below zero
         if (this.currentLocks <= 0) {
-            throw new Error('Cannot unlock: no active locks');
+            return;
         }
 
         // Decrement the current lock count
         this.currentLocks--;
 
         // If there are waiting requests and we have capacity, grant the next lock
-        if (this.waitingQueue.length > 0 && this.currentLocks < this.maxConcurrent) {
+        if (this.waitingQueue.length > 0) {
             const next = this.waitingQueue.shift();
             if (next) {
                 this.currentLocks++;
                 next.resolve();
             }
         }
-    }
-
-    /**
-     * Returns the current number of active locks
-     */
-    public getActiveCount(): number {
-        return this.currentLocks;
-    }
-
-    /**
-     * Returns the number of pending lock requests
-     */
-    public getWaitingCount(): number {
-        return this.waitingQueue.length;
     }
 }
