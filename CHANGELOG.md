@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/yogaajs/yNats/compare/v1.0.1...v1.1.0) (2025-05-09)
+
+
+### Bug Fixes
+
+* wrong exports for new modules ([5c66104](https://github.com/yogaajs/yNats/commit/5c661045a69bb0cfd2ecb9b889cd373400a3d4b2))
+
+
+### Features
+
+* update all package ([2b770e6](https://github.com/yogaajs/yNats/commit/2b770e6ec7f2b1d132fe7e9113dfb6ece541e073))
+
 ## [1.0.1](https://github.com/yogaajs/yNats/compare/v1.0.0...v1.0.1) (2025-04-02)
 
 
