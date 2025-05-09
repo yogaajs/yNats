@@ -1,5 +1,5 @@
-export * as KvStore from './modules/kvstore/index';
-export * as IKvStore from './modules/kvstore/types';
+export { Client } from './core/client.class';
 
-export * as JetStream from './modules/jetstream/index';
-export * as IJetStream from './modules/jetstream/types';
+export * from './modules/stream';
+export * from './modules/store';
+export * from './modules/api';
