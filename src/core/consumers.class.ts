@@ -12,7 +12,7 @@ export class Consumers {
     // Constructor
 
     constructor(client: Client) {
-        this._logger = new Logger(`[nats][consumers]`);
+        this._logger = new Logger({ prefix: "[nats][consumers]" });
         this._client = client;
     }
 

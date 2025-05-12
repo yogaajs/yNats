@@ -14,7 +14,7 @@ import Operator from '@/classes/operator.class';
 
 const RETRY_TIMEOUT = 1_000;
 
-const logger = new Logger("[nats][client]");
+const logger = new Logger({ prefix: "[nats][client]" });
 const manager = new Manager();
 const operator = new Operator();
 

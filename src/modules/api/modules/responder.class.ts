@@ -1,15 +1,15 @@
 import type { JsMsg, ConsumerMessages, Consumer } from '@nats-io/jetstream';
 import type { Client } from "src/core/client.class";
-import type { StreamRequester } from './requester.class';
-import { Common } from '../classes/common.class';
 import { getSubject, getHeader } from '../utils';
-import Mutex from '@/classes/mutex.class';
+import { consumerConfig } from '../config';
+import ApiBase, { type API } from '../classes/common.class';
 
 // Types
 // ===========================================================
 
-export namespace StreamResponder {
-    export type Config = StreamRequester.Config & {
+export namespace ApiResponder {
+    export type Config = {
+        streamName: string,
         consumerName: string,
         filterSubject: string,
     };
@@ -21,19 +21,19 @@ export namespace StreamResponder {
         timestamp: number;
         data: any;
     };
-    export type Callback<T> = (subject: string, payload: Payload) => Promise<T>;
+    export type Callback<T> = 
+        (subject: string, payload: Payload) => Promise<T>;
 };
 
 // Class
 // ===========================================================
 
-export class StreamResponder extends Common<'responder'> {
-    private readonly mutex: Mutex;
-    private readonly options: StreamResponder.Options;
+export class ApiResponder extends ApiBase {
+    private readonly config: API.ConsumerConfig;
+    private readonly options: Omit<ApiResponder.Options, 'maxConcurrent' | 'debug'>;
 
     private consumer: Consumer | null = null;
     private consumerMessages: ConsumerMessages | null = null;
-
     private subscribeActive: boolean = false;
     private unsubscribeActive: boolean = false;
 
@@ -41,33 +41,35 @@ export class StreamResponder extends Common<'responder'> {
 
     constructor(
         client: Client,
-        config: StreamResponder.Config,
-        options?: Partial<StreamResponder.Options>
+        config: ApiResponder.Config,
+        options?: Partial<ApiResponder.Options>
     ) {
-        super(client, config, options?.debug ?? false);
+        super(client, {
+            type: 'responder',
+            streamName: config.streamName,
+            maxConcurrent: options?.maxConcurrent,
+            debug: options?.debug,
+        });
 
         // Options
         this.options = {
-            maxConcurrent: options?.maxConcurrent ?? 1,
-            debug: options?.debug ?? false,
-        } satisfies StreamResponder.Options;
+        } satisfies Omit<ApiResponder.Options, 'maxConcurrent' | 'debug'>;
+
+        // Config
+        this.config = consumerConfig({
+            streamName: config.streamName,
+            consumerName: config.consumerName,
+            filterSubject: config.filterSubject,
+        }) satisfies API.ConsumerConfig;
 
         // Setup
-        this.mutex = new Mutex(this.options.maxConcurrent);
-
-        // Setup
-        this.setupStream()
-            .then(() => {
-                this.setupConsumer()
-                    .then(() => {
-                        this.manager.setReady();
-                    });
-            });
+        this.setupConsumer(this.config)
+            .then(() => this.manager.setReady());
     }
 
     // Public
 
-    public async subscribe<T>(_callback: StreamResponder.Callback<T>): Promise<void> {
+    public async subscribe<T>(_callback: ApiResponder.Callback<T>): Promise<void> {
         if (this.subscribeActive) {
             throw new Error("Subscription is already active!");
         }
@@ -83,12 +85,12 @@ export class StreamResponder extends Common<'responder'> {
             await this.isReady();
 
             // Constants
-            const { streamConfig, consumerConfig } = this;
+            const { streamName, config } = this;
 
             // Get the consumer
             this.consumer = await this.client.consumer.getPullConsumer(
-                streamConfig.name, 
-                consumerConfig.durable_name
+                streamName, 
+                config.durable_name
             );
 
             // Setup the messages consumer
@@ -142,7 +144,7 @@ export class StreamResponder extends Common<'responder'> {
 
     // Setup
 
-    private async setupMessagesConsumer<T>(_callback: StreamResponder.Callback<T>): Promise<void> {
+    private async setupMessagesConsumer<T>(_callback: ApiResponder.Callback<T>): Promise<void> {
         // This is the basic pattern for processing messages forever
         while (true) {
 
@@ -158,20 +160,23 @@ export class StreamResponder extends Common<'responder'> {
 
                 // Consume messages (infinite loop)
                 for await (const msg of this.consumerMessages!) {
+
                     // Lock the mutex
-                    await this.mutex.lock();
+                    this.mutex.lock()
+                        .then(() => {
+                            // Process the message
+                            this.consumeMessage(msg, _callback)
+                                .finally(() => {
+                                    // Unlock the mutex
+                                    this.mutex.unlock();
+                                });
+                        });
                     
                     // Log
                     this.logger.debug(
                         `active: ${this.mutex.activeCount}`,
                         `waiting: ${this.mutex.waitingCount}`,
                     );
-
-                    // Process the message
-                    this.consumeMessage(msg, _callback)
-                        .finally(() => {
-                            this.mutex.unlock();
-                        });
                 }
 
                 // Log the unsubscribe
@@ -197,9 +202,9 @@ export class StreamResponder extends Common<'responder'> {
         }
     }
 
-    private async consumeMessage<T>(msg: JsMsg, callback: StreamResponder.Callback<T>): Promise<void> {
+    private async consumeMessage<T>(msg: JsMsg, callback: ApiResponder.Callback<T>): Promise<void> {
         // Constants
-        const { logger, client, streamConfig } = this;
+        const { logger, client, streamName, config } = this;
 
         // Create a working signal
         const clearWorkingSignal = this.createWorkingSignal(msg);
@@ -207,8 +212,8 @@ export class StreamResponder extends Common<'responder'> {
         try {
             // Decode the message
             const inbox = getHeader(msg.headers!);
-            const subject = getSubject(streamConfig.name, msg.subject);
-            const payload = msg.json() as StreamResponder.Payload;
+            const subject = getSubject(streamName, msg.subject);
+            const payload = msg.json() as ApiResponder.Payload;
 
             // Process the message
             const result = await callback(subject, payload);
@@ -233,14 +238,14 @@ export class StreamResponder extends Common<'responder'> {
             msg.nak();
 
             // Log the error
-            logger.error(`cannot process message (${msg.subject}) for stream (${streamConfig.name}):`, 
+            logger.error(`cannot process message (${msg.subject}) for stream (${streamName}):`, 
                 (error as Error).message,
             );
         }
     }
 
     private createWorkingSignal(_msg: JsMsg): () => void {
-        const ackWaitMs = this.consumerConfig.ack_wait / 1_000_000;
+        const ackWaitMs = this.config.ack_wait / 1_000_000;
         const intervalDelay = Math.floor(ackWaitMs * 0.5);
 
         const workingInterval = setInterval(() => {

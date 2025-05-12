@@ -5,6 +5,12 @@
 export default class Mutex {
     /** Maximum number of concurrent operations allowed */
     private readonly maxConcurrent: number;
+
+    /** Temporary upper limit of concurrent operations */
+    private concurrentLimit: number = 0;
+
+    /** Temporary upper limit of concurrent operations */
+    private concurrentLimitTimeout: NodeJS.Timeout | null = null;
     
     /** Current number of active locks */
     private currentLocks: number = 0;
@@ -16,11 +22,16 @@ export default class Mutex {
      * Creates a new mutex instance
      * @param maxConcurrent Maximum number of concurrent operations allowed (default: 1)
      */
-    constructor(maxConcurrent: number = 1) {
+    constructor({
+        maxConcurrent,
+    }: {
+        maxConcurrent: number;
+    }) {
         if (maxConcurrent <= 0) {
             throw new Error('Maximum concurrent operations must be greater than 0');
         }
         this.maxConcurrent = maxConcurrent;
+        this.concurrentLimit = maxConcurrent;
     }
 
     /**
@@ -43,7 +54,7 @@ export default class Mutex {
      */
     public lock(): Promise<void> {
         // If we haven't reached the maximum concurrent operations, grant the lock immediately
-        if (this.currentLocks < this.maxConcurrent) {
+        if (this.currentLocks < this.concurrentLimit) {
             this.currentLocks++;
             return Promise.resolve();
         }
@@ -75,5 +86,26 @@ export default class Mutex {
                 next.resolve();
             }
         }
+    }
+
+    /**
+     * Temporarily sets the upper limit of concurrent operations
+     * @param slots The number of slots to increase the limit by
+     * @param timeoutMs The timeout in milliseconds
+     */
+    public setUpperLimitTemporary(slots: number, timeoutMs: number): void {
+        if (this.concurrentLimit > this.maxConcurrent * 3) {
+            throw new Error('Upper limit is already at the maximum!');
+        }
+        if (slots < 1) {
+            throw new Error('Slots must be greater than 1!');
+        }
+        if (this.concurrentLimitTimeout) {
+            clearTimeout(this.concurrentLimitTimeout);
+        }
+        this.concurrentLimit = this.concurrentLimit + slots;
+        this.concurrentLimitTimeout = setTimeout(() => {
+            this.concurrentLimit = this.maxConcurrent;
+        }, timeoutMs);
     }
 }

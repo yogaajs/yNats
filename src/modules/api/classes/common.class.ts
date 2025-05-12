@@ -1,56 +1,69 @@
 import type { JetStreamApiError, StreamInfo, ConsumerInfo } from '@nats-io/jetstream';
 import type { Client } from "src/core/client.class";
-import type { StreamRequester } from '../modules/requester.class';
-import type { StreamResponder } from '../modules/responder.class';
-import { streamConfig, consumerConfig } from '../config';
+import type { streamConfig, consumerConfig } from '../config';
 
+import Mutex from '@/classes/mutex.class';
 import Manager from '@/classes/manager.class';
 import Logger from '@/classes/logger.class';
+
+// Types
+// ===========================================================
+
+export namespace API {
+    export type Options = {
+        type: 'requester' | 'responder',
+        streamName: string,
+        maxConcurrent?: number,
+        debug?: boolean;
+    };
+    export type StreamConfig = ReturnType<typeof streamConfig>;
+    export type ConsumerConfig = ReturnType<typeof consumerConfig>;
+};
 
 // Class
 // ===========================================================
 
-export class Common<Type extends 'requester' | 'responder'> {
+export default class {
     protected readonly client: Client;
     protected readonly logger: Logger;
     protected readonly manager: Manager;
+    protected readonly mutex: Mutex;
 
-    protected readonly streamConfig: ReturnType<typeof streamConfig>;
-    protected readonly consumerConfig: Type extends 'responder' ? ReturnType<typeof consumerConfig> : undefined;
+    protected readonly type: API.Options['type'];
+    protected readonly streamName: API.Options['streamName'];
 
     // Constructor
 
     constructor(
         client: Client, 
-        config: Type extends 'responder' ? StreamResponder.Config : StreamRequester.Config,
-        debug: boolean = false,
+        options: API.Options,
     ) {
         if (!client) throw new Error('Client is required!');
-        if (!config) throw new Error('Config is required!');
+        if (!options.type) throw new Error('Type is required!');
+        if (!options.streamName) throw new Error('Stream name is required!');
 
+        // Setup type
+        this.type = options.type;
+
+        // Setup stream name
+        this.streamName = options.streamName;
+
+        // Setup client
         this.client = client;
+
+        // Setup manager
         this.manager = new Manager();
 
-        // Always assign streamConfig
-        this.streamConfig = streamConfig({
-            streamName: config.streamName,
-            streamMaxConsumers: config?.streamMaxConsumers,
-            streamMaxAgeSeconds: config?.streamMaxAgeSeconds,
-            streamMaxMegabytes: config?.streamMaxMegabytes,
+        // Setup mutex
+        this.mutex = new Mutex({
+            maxConcurrent: options.maxConcurrent ?? 10,
         });
 
-        // Only assign consumerConfig and logger if Type is 'consumer'
-        if ('consumerName' in config) {
-            this.consumerConfig = consumerConfig({
-                streamName: config.streamName,
-                consumerName: config.consumerName,
-                filterSubject: config.filterSubject,
-            }) as any;
-            this.logger = new Logger(`[nats][responder][${this.streamConfig.name}]`, debug);
-        } else {
-            this.consumerConfig = undefined as any;
-            this.logger = new Logger(`[nats][requester][${this.streamConfig.name}]`, debug);
-        }
+        // Setup logger
+        this.logger = new Logger({
+            prefix: `[nats][${options.type}][${options.streamName}]`,
+            debug: options.debug ?? false,
+        });
     }
 
     // Private
@@ -60,38 +73,34 @@ export class Common<Type extends 'requester' | 'responder'> {
         await this.manager.isReady();
     }
 
-    protected async setupStream(): Promise<StreamInfo> {
-        const { streamConfig } = this;
-
+    protected async setupStream(config: API.StreamConfig): Promise<StreamInfo> {
         // Ensure client is ready
         await this.client.isReady();
 
         try {
             // Verify if the stream exists
-            return await this.client.stream.info(streamConfig.name);
+            return await this.client.stream.info(this.streamName);
         } catch (error) {
             // Create the stream if it doesn't exist
             if ((error as JetStreamApiError).name === "StreamNotFoundError") {
-                return await this.client.stream.create(streamConfig);
+                return await this.client.stream.create(config);
             } else {
                 throw error;
             }
         }
     }
 
-    protected async setupConsumer(): Promise<ConsumerInfo> {
-        const { streamConfig, consumerConfig } = this;
-
+    protected async setupConsumer(config: API.ConsumerConfig): Promise<ConsumerInfo> {
         // Ensure client is ready
         await this.client.isReady();
 
         try {
             // Verify if the consumer exists
-            return await this.client.consumer.info(streamConfig.name, consumerConfig!.durable_name);
+            return await this.client.consumer.info(this.streamName, config.durable_name);
         } catch (error) {
             // Create the consumer if it doesn't exist
             if ((error as JetStreamApiError).name === "ConsumerNotFoundError") {
-                return await this.client.consumer.create(streamConfig.name, consumerConfig!);
+                return await this.client.consumer.create(this.streamName, config);
             } else {
                 throw error;
             }

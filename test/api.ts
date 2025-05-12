@@ -1,5 +1,5 @@
 import { Client } from '../src/index';
-import { StreamRequester, StreamResponder } from '../src/modules/api';
+import { ApiRequester, ApiResponder } from '../src/modules/api';
 import { instances } from './constants/instances';
 
 // Constants
@@ -7,9 +7,8 @@ import { instances } from './constants/instances';
 
 const client = new Client(instances);
 
-const requester = new StreamRequester(client, {
+const requester = new ApiRequester(client, {
     streamName: "api3",
-    streamConfig: {},
 });
 
 //  TESTS
@@ -17,47 +16,52 @@ const requester = new StreamRequester(client, {
 
 export async function testConcurrency() {
 
-    const responder1 = new StreamResponder(client, {
+    const responder1 = new ApiResponder(client, {
         streamName: "api3",
-        streamConfig: {},
         consumerName: "consumer1",
-        consumerConfig: {},
         filterSubject: "providers",
+    }, {
+        maxConcurrent: 10,
+        debug: true,
     });
-
-    const responder2 = new StreamResponder(client, {
-        streamName: "api3",
-        streamConfig: {},
-        consumerName: "consumer2",
-        consumerConfig: {},
-        filterSubject: "explorers",
-    });
-
-    // Test send messages and request
-    setInterval(async () => {
-        const randomNumber1 = Math.floor(Math.random() * 10);
-        for (let i = 0; i < randomNumber1; i++) {
-            requester.request("providers", {
-                message: "Hello, world!",
-            }).then((response) => {
-                console.log("response", response);
-            });
-        }
-    }, 1_000);
 
     responder1.subscribe(
         async (subjects: any, msg: any) => {
-            console.log("responder1", subjects, msg);
+            const random = Math.floor(Math.random() * 3_000);
+            await new Promise(resolve => setTimeout(resolve, random));
             return ({ duration: Date.now() - msg.timestamp })
         },
     );
 
-    responder2.subscribe(
-        async (subjects: any, msg: any) => {
-            console.log("responder2", subjects, msg);
-            return ({ duration: Date.now() - msg.timestamp })
-        },
-    );
+    // const responder2 = new StreamResponder(client, {
+    //     streamName: "api3",
+    //     consumerName: "consumer2",
+    //     filterSubject: "explorers",
+    // }, {
+    //     maxConcurrent: 10,
+    //     debug: true,
+    // });
+
+    // Test send messages and request
+    await new Promise(resolve => setTimeout(resolve, 10_000));
+    setInterval(async () => {
+        const random = Math.floor(Math.random() * 30);
+        const min = Math.max(random, 10);
+        console.log("sending messages", min);
+
+        for (let i = 0; i < min; i++) {
+            requester.request("providers", {
+                message: "Hello, world!",
+            }).catch(console.error);
+        }
+    }, 2_000);
+
+    // responder2.subscribe(
+    //     async (subjects: any, msg: any) => {
+    //         console.log("responder2", subjects, msg);
+    //         return ({ duration: Date.now() - msg.timestamp })
+    //     },
+    // );
 
     // setTimeout(() => {
     //     responder.unsubscribe();

@@ -13,7 +13,7 @@ export class Streams {
     // Constructor
 
     constructor(client: Client) {
-        this._logger = new Logger(`[nats][streams]`);
+        this._logger = new Logger({ prefix: "[nats][streams]" });
         this._client = client;
     }
 

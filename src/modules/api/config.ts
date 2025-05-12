@@ -1,7 +1,7 @@
 import type { StreamConfig, ConsumerConfig } from '@nats-io/jetstream';
 import { AckPolicy, DeliverPolicy, RetentionPolicy, DiscardPolicy, StorageType, ReplayPolicy } from '@nats-io/jetstream';
-import type { StreamRequester } from './modules/requester.class';
-import type { StreamResponder } from './modules/responder.class';
+import type { ApiRequester } from './modules/requester.class';
+import type { ApiResponder } from './modules/responder.class';
 
 // Stream
 // ===========================================================
@@ -11,7 +11,7 @@ export const streamConfig = ({
     streamMaxConsumers,
     streamMaxAgeSeconds,
     streamMaxMegabytes,
-}: StreamRequester.Config) => {
+}: ApiRequester.Config) => {
     const maxConsumers = (streamMaxConsumers ?? 10);
     const maxAgeSeconds = (streamMaxAgeSeconds ?? 1 * 60 * 60);
     const maxMegabytes = (streamMaxMegabytes ?? 256);
@@ -34,9 +34,9 @@ export const streamConfig = ({
 
 export const consumerConfig = ({
     streamName,
-    consumerName,
+    consumerName,   
     filterSubject,
-}: StreamResponder.Config) => {
+}: ApiResponder.Config) => {
     const durableName = `consumer_${streamName}_${consumerName}`;
     const subject = `${streamName}.${filterSubject}`;
     return {
