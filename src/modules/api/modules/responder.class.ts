@@ -1,7 +1,7 @@
 import type { JsMsg, ConsumerMessages, Consumer } from '@nats-io/jetstream';
 import type { Client } from "src/core/client.class";
 import { getSubject, getHeader } from '../utils';
-import { compress } from '@/utils/snappy.utils';
+import { compress } from 'src/utils/snappy.utils';
 import { consumerConfig } from '../config';
 import ApiBase, { type API } from '../classes/common.class';
 
@@ -32,7 +32,7 @@ export namespace ApiResponder {
 
 export class ApiResponder extends ApiBase {
     private readonly config: API.ConsumerConfig;
-    private readonly options: Omit<ApiResponder.Options, 'maxConcurrent' | 'debug'>;
+    //private readonly options: Omit<ApiResponder.Options, 'maxConcurrent' | 'debug'>;
 
     private consumer: Consumer | null = null;
     private consumerMessages: ConsumerMessages | null = null;
@@ -54,8 +54,8 @@ export class ApiResponder extends ApiBase {
         });
 
         // Options
-        this.options = {
-        } satisfies Omit<ApiResponder.Options, 'maxConcurrent' | 'debug'>;
+        // this.options = {
+        // } satisfies Omit<ApiResponder.Options, 'maxConcurrent' | 'debug'>;
 
         // Config
         this.config = consumerConfig({
@@ -206,7 +206,7 @@ export class ApiResponder extends ApiBase {
 
     private async consumeMessage<T>(msg: JsMsg, callback: ApiResponder.Callback<T>): Promise<void> {
         // Constants
-        const { logger, client, streamName, config } = this;
+        const { logger, client, streamName } = this;
 
         // Create a working signal
         const clearWorkingSignal = this.createWorkingSignal(msg);

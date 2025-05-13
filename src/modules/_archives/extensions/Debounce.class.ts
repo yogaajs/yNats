@@ -1,5 +1,5 @@
-import { createPromise } from '@/utils/promise.utils';
-import { retryWrapper } from '@/utils/retry.utils';
+import { createPromise } from 'src/utils/promise.utils';
+import { retryWrapper } from 'src/utils/retry.utils';
 
 // Class
 // ===========================================================

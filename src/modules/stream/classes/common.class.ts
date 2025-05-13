@@ -4,8 +4,8 @@ import type { StreamPublisher } from '../modules/publisher.class';
 import type { StreamConsumer } from '../modules/consumer.class';
 import { streamConfig, consumerConfig } from '../config';
 
-import Manager from '@/classes/manager.class';
-import Logger from '@/classes/logger.class';
+import Manager from 'src/classes/manager.class';
+import Logger from 'src/classes/logger.class';
 
 // Class
 // ===========================================================

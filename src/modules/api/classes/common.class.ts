@@ -2,9 +2,9 @@ import type { JetStreamApiError, StreamInfo, ConsumerInfo } from '@nats-io/jetst
 import type { Client } from "src/core/client.class";
 import type { streamConfig, consumerConfig } from '../config';
 
-import Mutex from '@/classes/mutex.class';
-import Manager from '@/classes/manager.class';
-import Logger from '@/classes/logger.class';
+import Mutex from 'src/classes/mutex.class';
+import Manager from 'src/classes/manager.class';
+import Logger from 'src/classes/logger.class';
 
 // Types
 // ===========================================================

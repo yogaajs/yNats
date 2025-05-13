@@ -1,7 +1,7 @@
 import type { Client } from "src/core/client.class";
-import { StreamConfig, StreamInfo, StreamUpdateConfig, JetStreamApiError } from "@nats-io/jetstream";
+import { StreamConfig, StreamInfo, StreamUpdateConfig } from "@nats-io/jetstream";
 import { WithRequired } from '@nats-io/transport-node';
-import Logger from '@/classes/logger.class';
+import Logger from 'src/classes/logger.class';
 
 // Class
 // ===========================================================

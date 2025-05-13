@@ -1,7 +1,7 @@
 import { Kvm } from '@nats-io/kv';
-import { Client } from '@/core/Client';
-import { Logger } from '@/classes/logger.class';
-import { Readiness } from '@/classes/manager.class';
+import { Client } from 'src/core/Client';
+import { Logger } from 'src/classes/logger.class';
+import { Readiness } from 'src/classes/manager.class';
 import { type IKvStore, type KV, type KvOptions, StorageType, DiscardPolicy } from '../types';
 
 // Class

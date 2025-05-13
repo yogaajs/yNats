@@ -1,8 +1,8 @@
 import type { IStream, IPayload } from '../types';
 import { RetentionPolicy, StorageType, DiscardPolicy } from "@nats-io/jetstream";
 
-import Logger from '@/classes/logger.class';
-import Manager from '@/classes/manager.class';
+import Logger from 'src/classes/logger.class';
+import Manager from 'src/classes/manager.class';
 
 // Class
 // ===========================================================

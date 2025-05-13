@@ -14,8 +14,6 @@
 		"stripInternal": true,
 		"noImplicitReturns": true,
 		"noImplicitOverride": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedIndexedAccess": true,
 		"noPropertyAccessFromIndexSignature": true,
@@ -28,6 +26,7 @@
 			"DOM.Iterable",
 			"ES2023" // Node.js 20+
 		],
+    "baseUrl": ".",
   },
   "exclude": [
     "node_modules",

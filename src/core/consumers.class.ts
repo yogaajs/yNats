@@ -1,6 +1,6 @@
 import type { Client } from "src/core/client.class";
 import type { Consumer, ConsumerInfo, ConsumerConfig, PushConsumer } from '@nats-io/jetstream';
-import Logger from '@/classes/logger.class';
+import Logger from 'src/classes/logger.class';
 
 // Class
 // ===========================================================

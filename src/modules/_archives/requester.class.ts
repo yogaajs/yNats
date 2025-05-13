@@ -1,9 +1,9 @@
 import type { IProducer } from '../types';
 import { headers, createInbox, Subscription, MsgHdrs } from '@nats-io/nats-core';
 
-import Logger from '@/classes/logger.class';
+import Logger from 'src/classes/logger.class';
 import { PubAck } from '@nats-io/jetstream';
-import { withExpiration } from '@/utils/timeout.utils';
+import { withExpiration } from 'src/utils/timeout.utils';
 
 // Types
 // ===========================================================

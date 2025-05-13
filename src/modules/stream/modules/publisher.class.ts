@@ -1,7 +1,7 @@
 import type { PubAck, StreamConfig } from '@nats-io/jetstream';
 import type { Client } from "src/core/client.class";
 import { Common } from '../classes/common.class';
-import { withExpiration } from '@/utils/timeout.utils';
+import { withExpiration } from 'src/utils/timeout.utils';
 import { setSubject } from '../utils';
 
 // Types

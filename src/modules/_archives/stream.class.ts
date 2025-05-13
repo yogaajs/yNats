@@ -3,8 +3,8 @@ import type { WithRequired } from '@nats-io/transport-node';
 import type { StreamConfig } from "@nats-io/jetstream";
 import { RetentionPolicy, StorageType, DiscardPolicy } from "@nats-io/jetstream";
 
-import Logger from '@/classes/logger.class';
-import Manager from '@/classes/manager.class';
+import Logger from 'src/classes/logger.class';
+import Manager from 'src/classes/manager.class';
 
 // Class
 // ===========================================================

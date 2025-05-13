@@ -2,7 +2,7 @@ import type { IConsumer, IPayload } from '../types';
 import type { Consumer, JsMsg, ConsumerMessages, ConsumerConfig, ConsumeOptions } from '@nats-io/jetstream';
 import { AckPolicy, DeliverPolicy } from '@nats-io/jetstream';
 
-import Logger from '@/classes/logger.class';
+import Logger from 'src/classes/logger.class';
 
 // Constants
 // ===========================================================

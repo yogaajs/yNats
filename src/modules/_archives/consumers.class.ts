@@ -1,9 +1,9 @@
 import type { IConsumers } from '../types';
 import type { Consumer as JetStreamConsumer, ConsumerInfo } from '@nats-io/jetstream';
 import { AckPolicy, DeliverPolicy, ConsumerConfig } from '@nats-io/jetstream';
-import Logger from '@/classes/logger.class';
-import Manager from '@/classes/manager.class';
-import { withExpiration } from '@/utils/timeout.utils';
+import Logger from 'src/classes/logger.class';
+import Manager from 'src/classes/manager.class';
+import { withExpiration } from 'src/utils/timeout.utils';
 
 // Constants
 // ===========================================================

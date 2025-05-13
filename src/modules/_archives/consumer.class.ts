@@ -3,7 +3,7 @@ import type { JsMsg, ConsumerMessages, ConsumeOptions } from '@nats-io/jetstream
 import { DEFAULT_ACK_WAIT_MS } from './consumers.class';
 import { AckPolicy, DeliverPolicy, Consumer } from '@nats-io/jetstream';
 import { Consumers } from './consumers.class';
-import Logger from '@/classes/logger.class';
+import Logger from 'src/classes/logger.class';
 
 
 import { SimpleMutex } from "@nats-io/nats-core/internal";

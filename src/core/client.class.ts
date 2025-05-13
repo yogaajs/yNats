@@ -5,9 +5,9 @@ import { jetstream, jetstreamManager } from "@nats-io/jetstream";
 import { Streams } from "./streams.class";
 import { Consumers } from "./consumers.class";
 
-import Logger from '@/classes/logger.class';
-import Manager from '@/classes/manager.class';
-import Operator from '@/classes/operator.class';
+import Logger from 'src/classes/logger.class';
+import Manager from 'src/classes/manager.class';
+import Operator from 'src/classes/operator.class';
 
 // Constants
 // ===========================================================
