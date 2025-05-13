@@ -3,6 +3,7 @@ import type { Client } from "src/core/client.class";
 import { getSubject, getHeader } from '../utils';
 import { consumerConfig } from '../config';
 import ApiBase, { type API } from '../classes/common.class';
+import { compress, decompress } from '@/utils/snappy.utils';
 
 // Types
 // ===========================================================
@@ -11,6 +12,7 @@ export namespace ApiResponder {
     export type Config = {
         streamName: string,
         consumerName: string,
+        //consumerType: 'requests' | 'responses',
         filterSubject: string,
     };
     export type Options = {
@@ -45,7 +47,7 @@ export class ApiResponder extends ApiBase {
         options?: Partial<ApiResponder.Options>
     ) {
         super(client, {
-            type: 'responder',
+            classType: 'responder',
             streamName: config.streamName,
             maxConcurrent: options?.maxConcurrent,
             debug: options?.debug,
@@ -217,13 +219,14 @@ export class ApiResponder extends ApiBase {
 
             // Process the message
             const result = await callback(subject, payload);
-            const payloadResult = JSON.stringify({ timestamp: Date.now(), data: result });
+            const payloadResult = { timestamp: Date.now(), data: result };
+            const payloadResultCompressed = await compress(payloadResult, true);
             
             // Acknowledge the message
             clearWorkingSignal();
 
             // Respond to the request
-            client.natsConnection.publish(inbox, payloadResult, {
+            client.natsConnection.publish(inbox, payloadResultCompressed, {
                 headers: msg.headers
             });
 

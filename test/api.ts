@@ -11,36 +11,37 @@ const requester = new ApiRequester(client, {
     streamName: "api3",
 });
 
+const responder1 = new ApiResponder(client, {
+    streamName: "api3",
+    consumerName: "consumer1",
+    filterSubject: "providers",
+}, {
+    maxConcurrent: 10,
+    debug: true,
+});
+
 //  TESTS
 // ===========================================================
 
 export async function testConcurrency() {
-
-    const responder1 = new ApiResponder(client, {
-        streamName: "api3",
-        consumerName: "consumer1",
-        filterSubject: "providers",
-    }, {
-        maxConcurrent: 10,
-        debug: true,
-    });
-
     responder1.subscribe(
         async (subjects: any, msg: any) => {
-            const random = Math.floor(Math.random() * 3_000);
-            await new Promise(resolve => setTimeout(resolve, random));
-            return ({ duration: Date.now() - msg.timestamp })
+            const payload = {
+                foo: 'bar',
+                data: new Array(1_000).fill('some-repeating-text') // simulate large JSON
+            };
+            return ({ duration: Date.now() - msg.timestamp, payload })
         },
     );
+    requester.request("providers", {
+        message: "Hello, world!",
+    })
+    .then((res) => {
+        console.log(res);
+    })
+    .catch(console.error);
 
-    // const responder2 = new StreamResponder(client, {
-    //     streamName: "api3",
-    //     consumerName: "consumer2",
-    //     filterSubject: "explorers",
-    // }, {
-    //     maxConcurrent: 10,
-    //     debug: true,
-    // });
+    return;
 
     // Test send messages and request
     await new Promise(resolve => setTimeout(resolve, 10_000));

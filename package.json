@@ -42,7 +42,8 @@
     "@nats-io/jetstream": "^3.0.0",
     "@nats-io/kv": "^3.0.0",
     "@nats-io/nats-core": "^3.0.0",
-    "@nats-io/transport-node": "^3.0.0"
+    "@nats-io/transport-node": "^3.0.0",
+    "snappy": "^7.2.2"
   },
   "files": [
     "dist"

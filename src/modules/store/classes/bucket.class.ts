@@ -31,7 +31,9 @@ export class BucketStore {
         // Private
         this.client = client;
         this.manager = new Manager();
-        this.logger = new Logger(`[nats][store][${config.storeName}]`);
+        this.logger = new Logger({
+            prefix: `[nats][store][${config.storeName}]`,
+        });
 
         // Public
         this.bucketConfig = bucketConfig(config);

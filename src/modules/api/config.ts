@@ -1,7 +1,7 @@
 import type { StreamConfig, ConsumerConfig } from '@nats-io/jetstream';
-import { AckPolicy, DeliverPolicy, RetentionPolicy, DiscardPolicy, StorageType, ReplayPolicy } from '@nats-io/jetstream';
 import type { ApiRequester } from './modules/requester.class';
 import type { ApiResponder } from './modules/responder.class';
+import { AckPolicy, DeliverPolicy, RetentionPolicy, DiscardPolicy, StorageType, ReplayPolicy } from '@nats-io/jetstream';
 
 // Stream
 // ===========================================================
@@ -14,7 +14,7 @@ export const streamConfig = ({
 }: ApiRequester.Config) => {
     const maxConsumers = (streamMaxConsumers ?? 10);
     const maxAgeSeconds = (streamMaxAgeSeconds ?? 1 * 60 * 60);
-    const maxMegabytes = (streamMaxMegabytes ?? 256);
+    const maxMegabytes = (streamMaxMegabytes ?? 512);
     return {
         "name": streamName,                           // Set the name
         "subjects": [`${streamName}.>`],              // Set the subjects
@@ -23,18 +23,19 @@ export const streamConfig = ({
         "discard": DiscardPolicy.Old,                 // Set the discard policy
         "max_msgs": 10_000,                           // Max messages in the stream
         "max_msgs_per_subject": 1_000,                // Per subject retention limit
+        "max_msg_size": -1,                           // Max message size
         "max_consumers": maxConsumers,                // Max consumers for this stream
         "max_age": maxAgeSeconds * 1_000_000_000,     // Nanoseconds
         "max_bytes": maxMegabytes * 1024 * 1024,      // MB
     } satisfies Partial<StreamConfig>;
 };
 
-// Consumer
+// Consumers
 // ===========================================================
 
 export const consumerConfig = ({
     streamName,
-    consumerName,   
+    consumerName,
     filterSubject,
 }: ApiResponder.Config) => {
     const durableName = `consumer_${streamName}_${consumerName}`;

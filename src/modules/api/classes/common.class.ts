@@ -11,7 +11,7 @@ import Logger from '@/classes/logger.class';
 
 export namespace API {
     export type Options = {
-        type: 'requester' | 'responder',
+        classType: 'requester' | 'responder',
         streamName: string,
         maxConcurrent?: number,
         debug?: boolean;
@@ -29,7 +29,7 @@ export default class {
     protected readonly manager: Manager;
     protected readonly mutex: Mutex;
 
-    protected readonly type: API.Options['type'];
+    protected readonly classType: API.Options['classType'];
     protected readonly streamName: API.Options['streamName'];
 
     // Constructor
@@ -39,11 +39,11 @@ export default class {
         options: API.Options,
     ) {
         if (!client) throw new Error('Client is required!');
-        if (!options.type) throw new Error('Type is required!');
+        if (!options.classType) throw new Error('Class type is required!');
         if (!options.streamName) throw new Error('Stream name is required!');
 
-        // Setup type
-        this.type = options.type;
+        // Setup class type
+        this.classType = options.classType;
 
         // Setup stream name
         this.streamName = options.streamName;
@@ -61,7 +61,7 @@ export default class {
 
         // Setup logger
         this.logger = new Logger({
-            prefix: `[nats][${options.type}][${options.streamName}]`,
+            prefix: `[nats][${options.classType}][${options.streamName}]`,
             debug: options.debug ?? false,
         });
     }

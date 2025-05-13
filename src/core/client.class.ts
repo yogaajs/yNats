@@ -150,6 +150,7 @@ export class Client {
             try {
                 this.nc = await connect(this.connectionOptions!);
                 logger.info(`Connection to NATS server initialized.`);
+                logger.info(`Max payload:`, this.nc!.info!.max_payload);
                 break;
 
             } catch (error) {

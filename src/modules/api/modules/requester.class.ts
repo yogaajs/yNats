@@ -2,6 +2,7 @@ import type { Subscription, MsgHdrs } from '@nats-io/nats-core';
 import type { PubAck } from '@nats-io/jetstream';
 import type { Client } from "src/core/client.class";
 import { withExpiration } from '@/utils/timeout.utils';
+import { decompress } from '@/utils/snappy.utils';
 import { setSubject, setHeader, getHeader, setInbox } from '../utils';
 import { streamConfig } from '../config';
 import ApiBase, { type API } from '../classes/common.class';
@@ -44,7 +45,7 @@ export class ApiRequester extends ApiBase {
         options?: Partial<ApiRequester.Options>
     ) {
         super(client, {
-            type: 'requester',
+            classType: 'requester',
             streamName: config.streamName,
             maxConcurrent: options?.maxConcurrent,
             debug: options?.debug,
@@ -87,7 +88,7 @@ export class ApiRequester extends ApiBase {
         if (this.queue.length > this.options.warnThreshold) {
             this.logger.alert('queue', `High number of requests: ${this.queue.length}`);
             try {
-                this.mutex.setUpperLimitTemporary(5, 10_000);
+                this.mutex.setUpperLimitTemporary(5, 1_000);
             } catch (error) {
                 this.logger.error((error as Error).message);
             }
@@ -206,7 +207,7 @@ export class ApiRequester extends ApiBase {
         return (async () => {
             for await (const msg of _subscription) {
                 if (getHeader(msg.headers!) === _inbox) {
-                    return msg.json();
+                    return decompress(msg.data);
                 }
             }
             throw new Error('Subscription closed before response');

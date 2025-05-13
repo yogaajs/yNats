@@ -47,10 +47,14 @@ export class Common<Type extends 'publisher' | 'consumer'> {
                 streamSubject: config.streamSubject,
                 consumerName: config.consumerName,
             }) as any;
-            this.logger = new Logger(`[nats][consumer][${this.consumerConfig!.durable_name}]`);
+            this.logger = new Logger({
+                prefix: `[nats][consumer][${this.consumerConfig!.durable_name}]`,
+            });
         } else {
             this.consumerConfig = undefined as any;
-            this.logger = new Logger(`[nats][publisher][${this.streamConfig.name}]`);
+            this.logger = new Logger({
+                prefix: `[nats][publisher][${this.streamConfig.name}]`,
+            });
         }
     }
 
