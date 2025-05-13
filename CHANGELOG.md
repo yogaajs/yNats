@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/yogaajs/yNats/compare/v1.1.2...v1.1.3) (2025-05-13)
+
+
+### Bug Fixes
+
+* add concurrency on api req/res ([1bb4103](https://github.com/yogaajs/yNats/commit/1bb4103a8946b1dc307190f77eab02932dd74999))
+
 ## [1.1.2](https://github.com/yogaajs/yNats/compare/v1.1.1...v1.1.2) (2025-05-09)
 
 
