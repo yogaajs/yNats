@@ -7,6 +7,3 @@
 # Ignore build files
 **/dist/
 **/build/
-
-# Ignore package-lock.json
-package-lock.json
