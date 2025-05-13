@@ -1,5 +1,11 @@
 ## [1.1.3](https://github.com/yogaajs/yNats/compare/v1.1.2...v1.1.3) (2025-05-13)
 
+## 2.0.1
+
+### Patch Changes
+
+- 4c590f4: Correct api module
+
 ## 2.0.0
 
 ### Major Changes
