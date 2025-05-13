@@ -1,2 +1,2 @@
-export { ApiRequester } from './modules/requester.class';
-export { ApiResponder } from './modules/responder.class';
+export { Requester } from './modules/requester.class';
+export { Responder } from './modules/responder.class';

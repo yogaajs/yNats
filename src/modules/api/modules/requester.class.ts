@@ -3,14 +3,13 @@ import type { PubAck } from '@nats-io/jetstream';
 import type { Client } from "src/core/client.class";
 import { withExpiration } from 'src/utils/timeout.utils';
 import { decompress } from 'src/utils/snappy.utils';
-import { setSubject, setHeader, getHeader, setInbox } from '../utils';
 import { streamConfig } from '../config';
 import ApiBase, { type API } from '../classes/common.class';
 
 // Types
 // ===========================================================
 
-export namespace ApiRequester {
+export namespace Requester {
     export type Config = {
         streamName: string,
         streamMaxConsumers?: number,
@@ -29,9 +28,9 @@ export namespace ApiRequester {
 // Class
 // ===========================================================
 
-export class ApiRequester extends ApiBase {
+export class Requester extends ApiBase {
     private readonly config: API.StreamConfig;
-    private readonly options: Omit<ApiRequester.Options, 'maxConcurrent' | 'debug'>;
+    private readonly options: Omit<Requester.Options, 'maxConcurrent' | 'debug'>;
 
     private queue: Array<{ subject: string, payload: string, resolve: (value: any) => void, reject: (reason?: any) => void }> = [];
     private isProcessing: boolean = false;
@@ -41,8 +40,8 @@ export class ApiRequester extends ApiBase {
 
     constructor(
         client: Client,
-        config: ApiRequester.Config,
-        options?: Partial<ApiRequester.Options>
+        config: Requester.Config,
+        options?: Partial<Requester.Options>
     ) {
         super(client, {
             classType: 'requester',
@@ -56,7 +55,7 @@ export class ApiRequester extends ApiBase {
             maxAttempts: options?.maxAttempts ?? 2,
             timeoutProcess: options?.timeoutProcess ?? 15_000,
             warnThreshold: options?.warnThreshold ?? 100,
-        } satisfies Omit<ApiRequester.Options, 'maxConcurrent' | 'debug'>;
+        } satisfies Omit<Requester.Options, 'maxConcurrent' | 'debug'>;
 
         // Config (stream)
         this.config = streamConfig({
@@ -75,8 +74,8 @@ export class ApiRequester extends ApiBase {
 
     public async request<T>(_subject: string, _data: Record<string, any>): Promise<T> {
         // Constants
-        const subject = setSubject(this.config.name, _subject);
-        const payload = JSON.stringify({ timestamp: Date.now(), data: _data });
+        const subject = this.setSubject(_subject);
+        const payload = this.createPayload({ request: _data });
 
         // Execute the request
         const result = (new Promise((resolve, reject) => {
@@ -147,6 +146,12 @@ export class ApiRequester extends ApiBase {
                 // Process the request (unlock the mutex)
                 this.processRequest()
                     .finally(() => this.mutex.unlock());
+
+                // Log
+                this.logger.debug(
+                    `active: ${this.mutex.activeCount}`,
+                    `waiting: ${this.mutex.waitingCount}`,
+                );
             }
 
         } finally {
@@ -160,8 +165,8 @@ export class ApiRequester extends ApiBase {
         const { subject, payload, resolve, reject } = this.queue.shift()!;
 
         // Create headers and reply data
-        const inbox = setInbox(subject);
-        const headers = setHeader(inbox);
+        const inbox = this.setInbox(subject);
+        const headers = this.setHeader(inbox);
 
         // Attempt to publish the message
         for (let attempt = 1; attempt <= this.options.maxAttempts; attempt++) {
@@ -180,8 +185,13 @@ export class ApiRequester extends ApiBase {
                 await withExpiration(sendPromise, 'Timeout (send request)', expireAt);
 
                 // Wait for the response
-                const result = await withExpiration(responsePromise, 'Timeout (wait response)', expireAt);
-                resolve(result);
+                const response = await withExpiration(responsePromise, 'Timeout (wait response)', expireAt);
+                if (response.result) {
+                    resolve(response.result);
+                } else {
+                    reject(new Error(response.error ?? 'Unknown error'));
+                }
+
                 break;
 
             } catch (error) {
@@ -203,12 +213,11 @@ export class ApiRequester extends ApiBase {
         }
     }
 
-    private waitResponse(_subscription: Subscription, _inbox: string): Promise<unknown> {
+    private waitResponse(_subscription: Subscription, _inbox: string): Promise<API.Response> {
         return (async () => {
             for await (const msg of _subscription) {
-                if (getHeader(msg.headers!) === _inbox) {
-                    return decompress(msg.data);
-                }
+                const result = await decompress(msg.data);
+                return this.parsePayload(result);
             }
             throw new Error('Subscription closed before response');
         })();

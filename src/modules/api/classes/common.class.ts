@@ -1,6 +1,7 @@
 import type { JetStreamApiError, StreamInfo, ConsumerInfo } from '@nats-io/jetstream';
 import type { Client } from "src/core/client.class";
 import type { streamConfig, consumerConfig } from '../config';
+import { createInbox, headers, type MsgHdrs } from '@nats-io/nats-core';
 
 import Mutex from 'src/classes/mutex.class';
 import Manager from 'src/classes/manager.class';
@@ -16,6 +17,16 @@ export namespace API {
         maxConcurrent?: number,
         debug?: boolean;
     };
+    export type Request = {
+        timestamp: number;
+        request: Record<string, any>;
+    };
+    export type Response = {
+        timestamp: number;
+    } & (
+        | { result: Record<string, any>; error: null }
+        | { result: null; error: string }
+    );
     export type StreamConfig = ReturnType<typeof streamConfig>;
     export type ConsumerConfig = ReturnType<typeof consumerConfig>;
 };
@@ -66,12 +77,14 @@ export default class {
         });
     }
 
-    // Private
+    // Info
 
     protected async isReady(): Promise<void> {
         await this.client.isReady();
         await this.manager.isReady();
     }
+
+    // Setup
 
     protected async setupStream(config: API.StreamConfig): Promise<StreamInfo> {
         // Ensure client is ready
@@ -105,5 +118,37 @@ export default class {
                 throw error;
             }
         }
+    }
+
+    // Utilities
+
+    protected setSubject(subject: string): string {
+        return `${this.streamName}.${subject}`;
+    }
+    
+    protected getSubject(subject: string): string {
+        return subject.replace(`${this.streamName}.`, '');
+    }
+
+    protected setHeader(inbox: string): MsgHdrs {
+        const hdr = headers();
+        hdr.set('reply-inbox', inbox);
+        return hdr;
+    }
+    
+    protected getHeader(h: MsgHdrs): string {
+        return h.get('reply-inbox') || '';
+    }
+
+    protected createPayload(data: Record<string, any>): string {
+        return JSON.stringify({ timestamp: Date.now(), ...data });
+    }
+
+    protected parsePayload(payload: string): API.Response {
+        return JSON.parse(payload) as API.Response;
+    }
+
+    protected setInbox(subject: string): string {
+        return createInbox(subject);
     }
 }

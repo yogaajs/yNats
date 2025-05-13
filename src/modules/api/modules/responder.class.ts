@@ -1,6 +1,5 @@
 import type { JsMsg, ConsumerMessages, Consumer } from '@nats-io/jetstream';
 import type { Client } from "src/core/client.class";
-import { getSubject, getHeader } from '../utils';
 import { compress } from 'src/utils/snappy.utils';
 import { consumerConfig } from '../config';
 import ApiBase, { type API } from '../classes/common.class';
@@ -8,29 +7,34 @@ import ApiBase, { type API } from '../classes/common.class';
 // Types
 // ===========================================================
 
-export namespace ApiResponder {
+export namespace Responder {
     export type Config = {
         streamName: string,
         consumerName: string,
-        //consumerType: 'requests' | 'responses',
         filterSubject: string,
     };
     export type Options = {
         maxConcurrent: number,
         debug: boolean;
     };
-    export type Payload = {
+    export type Request = {
         timestamp: number;
-        data: any;
+        request: Record<string, any>;
     };
-    export type Callback<T> = 
-        (subject: string, payload: Payload) => Promise<T>;
+    export type Response = {
+        timestamp: number;
+        result: Record<string, any> | null;
+        error: string | null;
+    };
+    export type Callback = 
+        (subject: string, request: Request) => 
+            Promise<Response['result']>;
 };
 
 // Class
 // ===========================================================
 
-export class ApiResponder extends ApiBase {
+export class Responder extends ApiBase {
     private readonly config: API.ConsumerConfig;
     //private readonly options: Omit<ApiResponder.Options, 'maxConcurrent' | 'debug'>;
 
@@ -43,8 +47,8 @@ export class ApiResponder extends ApiBase {
 
     constructor(
         client: Client,
-        config: ApiResponder.Config,
-        options?: Partial<ApiResponder.Options>
+        config: Responder.Config,
+        options?: Partial<Responder.Options>
     ) {
         super(client, {
             classType: 'responder',
@@ -71,7 +75,7 @@ export class ApiResponder extends ApiBase {
 
     // Public
 
-    public async subscribe<T>(_callback: ApiResponder.Callback<T>): Promise<void> {
+    public async subscribe(_callback: Responder.Callback): Promise<void> {
         if (this.subscribeActive) {
             throw new Error("Subscription is already active!");
         }
@@ -87,10 +91,10 @@ export class ApiResponder extends ApiBase {
             await this.isReady();
 
             // Constants
-            const { streamName, config } = this;
+            const { client, config, streamName } = this;
 
             // Get the consumer
-            this.consumer = await this.client.consumer.getPullConsumer(
+            this.consumer = await client.consumer.getPullConsumer(
                 streamName, 
                 config.durable_name
             );
@@ -146,7 +150,7 @@ export class ApiResponder extends ApiBase {
 
     // Setup
 
-    private async setupMessagesConsumer<T>(_callback: ApiResponder.Callback<T>): Promise<void> {
+    private async setupMessagesConsumer(_callback: Responder.Callback): Promise<void> {
         // This is the basic pattern for processing messages forever
         while (true) {
 
@@ -164,15 +168,11 @@ export class ApiResponder extends ApiBase {
                 for await (const msg of this.consumerMessages!) {
 
                     // Lock the mutex
-                    this.mutex.lock()
-                        .then(() => {
-                            // Process the message
-                            this.consumeMessage(msg, _callback)
-                                .finally(() => {
-                                    // Unlock the mutex
-                                    this.mutex.unlock();
-                                });
-                        });
+                    await this.mutex.lock();
+
+                    // Process the message
+                    this.consumeMessage(msg, _callback)
+                        .finally(() => this.mutex.unlock());
                     
                     // Log
                     this.logger.debug(
@@ -204,31 +204,30 @@ export class ApiResponder extends ApiBase {
         }
     }
 
-    private async consumeMessage<T>(msg: JsMsg, callback: ApiResponder.Callback<T>): Promise<void> {
+    private async consumeMessage(msg: JsMsg, callback: Responder.Callback): Promise<void> {
         // Constants
-        const { logger, client, streamName } = this;
+        const { logger } = this;
 
         // Create a working signal
         const clearWorkingSignal = this.createWorkingSignal(msg);
 
         try {
-            // Decode the message
-            const inbox = getHeader(msg.headers!);
-            const subject = getSubject(streamName, msg.subject);
-            const payload = msg.json() as ApiResponder.Payload;
+            // Decode the request
+            const subject = this.getSubject(msg.subject);
+            const payload = msg.json() as Responder.Request;
 
-            // Process the message
-            const result = await callback(subject, payload);
-            const payloadResult = { timestamp: Date.now(), data: result };
-            const payloadResultCompressed = await compress(payloadResult, true);
-            
+            try {
+                // Process the request
+                const response = await callback(subject, payload);
+                const result = this.createPayload({ result: response });
+                this.sendResponse(msg, result);
+            } catch (error) {
+                const result = this.createPayload({ error: (error as Error).message });
+                this.sendResponse(msg, result);
+            }
+
             // Acknowledge the message
             clearWorkingSignal();
-
-            // Respond to the request
-            client.natsConnection.publish(inbox, payloadResultCompressed, {
-                headers: msg.headers
-            });
 
             // Message has been processed (acknowledge)
             msg.ack(); 
@@ -241,7 +240,7 @@ export class ApiResponder extends ApiBase {
             msg.nak();
 
             // Log the error
-            logger.error(`cannot process message (${msg.subject}) for stream (${streamName}):`, 
+            logger.error(`cannot process message (${msg.subject}):`, 
                 (error as Error).message,
             );
         }
@@ -258,5 +257,15 @@ export class ApiResponder extends ApiBase {
         return () => {
             clearInterval(workingInterval);
         }
+    }
+
+    private async sendResponse(msg: JsMsg, data: string): Promise<void> {
+        const inbox = this.getHeader(msg.headers!);
+        const compressed = await compress(data);
+
+        // Respond to the request
+        this.client.natsConnection.publish(inbox, compressed, {
+            headers: msg.headers
+        });
     }
 }

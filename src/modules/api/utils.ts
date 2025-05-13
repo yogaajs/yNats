@@ -1,6 +1,6 @@
 import { createInbox, headers, type MsgHdrs } from '@nats-io/nats-core';
 
-// Utilities
+// Subject
 // ===========================================================
 
 export const setSubject = (streamName: string, subject: string) => {
@@ -11,9 +11,8 @@ export const getSubject = (streamName: string, subject: string) => {
     return subject.replace(`${streamName}.`, '');
 };
 
-export const getHeader = (h: MsgHdrs): string => {
-    return h.get('reply-inbox') || '';
-};
+// Header
+// ===========================================================
 
 export const setHeader = (inbox: string): MsgHdrs => {
     const hdr = headers();
@@ -21,6 +20,24 @@ export const setHeader = (inbox: string): MsgHdrs => {
     return hdr;
 };
 
+export const getHeader = (h: MsgHdrs): string => {
+    return h.get('reply-inbox') || '';
+};
+
+// Inbox
+// ===========================================================
+
 export const setInbox = (subject: string): string => {
     return createInbox(subject);
+};
+
+// Payload
+// ===========================================================
+
+export const createPayload = (data: Record<string, any>): string => {
+    return JSON.stringify({ timestamp: Date.now(), ...data });
+};
+
+export const parsePayload = (payload: string): Record<string, any> => {
+    return JSON.parse(payload);
 };

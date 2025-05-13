@@ -1,5 +1,5 @@
 {
-  "name": "@yogaajs/nats",
+  "name": "@yogaajs/ynats",
   "version": "2.0.0",
   "description": "Personal encapsulation module for nats",
   "license": "UNLICENSED",
@@ -20,8 +20,8 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.cts",
   "scripts": {
-    "build": "pkgroll --minify --clean-dist",
-    "build:test": "pkgroll --clean-dist",
+    "build": "pkgroll --clean-dist",
+    "build:minify": "pkgroll --clean-dist --minify",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "changeset publish"

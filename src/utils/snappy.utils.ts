@@ -1,16 +1,16 @@
 import snappy from 'snappy';
 
-export async function compress<T>(obj: T, debug: boolean = false): Promise<Uint8Array> {
+export async function compress(input: string, debug: boolean = false): Promise<Uint8Array> {
     const start = Date.now();
     try {
-        const jsonString = JSON.stringify(obj);
-        const jsonBuffer = Buffer.from(jsonString, 'utf8');
+        const jsonBuffer = Buffer.from(input, 'utf8');
         const compressed = await snappy.compress(jsonBuffer);
         const array = new Uint8Array(compressed);
 
         if (debug) {
             compressionDetails(jsonBuffer, array);
         }
+
         return array;
 
     } catch (err: unknown) {
@@ -25,14 +25,14 @@ export async function compress<T>(obj: T, debug: boolean = false): Promise<Uint8
     }
 }
 
-export async function decompress<T>(payload: Uint8Array, debug: boolean = false): Promise<T> {
+export async function decompress(payload: Uint8Array, debug: boolean = false): Promise<string> {
     const start = Date.now();
     try {
-        const input = Buffer.from(payload); // Convertit Uint8Array en Buffer
-        const decompressed = await snappy.uncompress(input);
-        const text = decompressed.toString();
+        const buffer = Buffer.from(payload); // Convertit Uint8Array en Buffer
+        const decompressed = await snappy.uncompress(buffer);
+        const input = decompressed.toString();
 
-        return JSON.parse(text);
+        return input;
 
     } catch (err: unknown) {
         throw new Error(

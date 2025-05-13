@@ -1,5 +1,5 @@
 import { Client } from '../src/index';
-import { ApiRequester, ApiResponder } from '../src/modules/api';
+import { Requester, Responder } from '../src/modules/api';
 import { instances } from './constants/instances';
 
 // Constants
@@ -7,11 +7,11 @@ import { instances } from './constants/instances';
 
 const client = new Client(instances);
 
-const requester = new ApiRequester(client, {
+const requester = new Requester(client, {
     streamName: "api3",
 });
 
-const responder1 = new ApiResponder(client, {
+const responder1 = new Responder(client, {
     streamName: "api3",
     consumerName: "consumer1",
     filterSubject: "providers",
@@ -25,12 +25,16 @@ const responder1 = new ApiResponder(client, {
 
 export async function testConcurrency() {
     responder1.subscribe(
-        async (subjects: any, msg: any) => {
+        async (subjects, { timestamp, request }) => {
+            const random = Math.floor(Math.random() * 100);
             const payload = {
                 foo: 'bar',
                 data: new Array(1_000).fill('some-repeating-text') // simulate large JSON
             };
-            return ({ duration: Date.now() - msg.timestamp, payload })
+            if (random > 90) {
+                throw new Error('random error');
+            }
+            return { duration: Date.now() - timestamp, payload };
         },
     );
     requester.request("providers", {
